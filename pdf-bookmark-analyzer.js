@@ -11,11 +11,15 @@
  * @tested Foxit PDF Editor 13.0.1.21693
  */
 
-// 全局变量
-var gDoc;
-var gBookmarks;
+// 全局变量定义
+var gDoc;          // 当前活动的PDF文档
+var gBookmarks;    // 文档中的所有书签
 
-// 修改函数名，使其更准确地反映功能
+/**
+ * 分析书签分布情况
+ * @param {Object} doc - PDF文档对象
+ * @param {Array} bookmarks - 书签数组
+ */
 function analyzeBookmarkDistribution(doc, bookmarks) {
     console.println("\n=== 开始分析书签分布 ===");
     var pagesWithoutBookmarks = [];
@@ -129,7 +133,13 @@ function analyzeBookmarkDistribution(doc, bookmarks) {
     }
 }
 
-// 主函数重命名
+/**
+ * 启动书签分析
+ * 主要流程：
+ * 1. 获取当前活动文档
+ * 2. 检查并获取书签
+ * 3. 执行分析
+ */
 function startBookmarkAnalysis() {
     console.println("=== 开始执行脚本 ===");
     console.println("时间: " + new Date().toLocaleString());

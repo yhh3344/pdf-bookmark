@@ -8,7 +8,16 @@
  * @tested Foxit PDF Editor 13.0.1.21693
  */
 
-// 全局配置
+/**
+ * 全局配置对象
+ * @property {Object} annotation - 注释相关配置
+ * @property {Array} annotation.rect - 页脚区域 [左, 下, 右, 上]
+ * @property {number} annotation.textSize - 字体大小
+ * @property {string} annotation.font - 字体名称
+ * @property {Array} annotation.textColor - 文字颜色 [类型, R, G, B]
+ * @property {Array} annotation.strokeColor - 边框颜色 [类型, R, G, B]
+ * @property {Array} annotation.fillColor - 背景颜色 [类型, R, G, B]
+ */
 var CONFIG = {
     annotation: {
         rect: [30, 15, 570, 35],
@@ -20,7 +29,20 @@ var CONFIG = {
     }
 };
 
-// 创建注释函数
+// 全局变量定义
+var gDoc;          // 当前活动的PDF文档
+var gBookmarks;    // 文档中的所有书签
+var gOriginalPage; // 原始页码（用于恢复）
+var gPreviewAnnot; // 预览注释对象
+
+/**
+ * 创建页脚注释
+ * @param {Object} doc - PDF文档对象
+ * @param {number} page - 页码
+ * @param {string} text - 注释文本
+ * @returns {Object} 创建的注释对象
+ * @throws {Error} 创建失败时抛出错误
+ */
 function createAnnotation(doc, page, text) {
     try {
         if (page < 0 || page >= doc.numPages) {
@@ -83,13 +105,14 @@ function createAnnotation(doc, page, text) {
     }
 }
 
-// 全局变量
-var gDoc;
-var gBookmarks;
-var gOriginalPage;
-var gPreviewAnnot;
-
-// 确认对话框函数（全局）
+/**
+ * 显示确认对话框并处理所有书签
+ * 主要流程：
+ * 1. 确认是否继续处理
+ * 2. 遍历处理所有书签
+ * 3. 统计处理结果
+ * 4. 显示处理报告
+ */
 function showConfirmDialog() {
     var response = app.alert({
         cMsg: "请查看当前页面的预览效果\n是否继续处理所有书签？",
@@ -203,7 +226,14 @@ function showConfirmDialog() {
     }
 }
 
-// 主函数
+/**
+ * 添加书签页脚
+ * 主要流程：
+ * 1. 获取当前文档
+ * 2. 检查并获取书签
+ * 3. 创建预览
+ * 4. 等待用户确认
+ */
 function addBookmarkFooters() {
     try {
         console.println("=== 开始执行脚本 ===");
@@ -251,6 +281,11 @@ function addBookmarkFooters() {
     }
 }
 
+/**
+ * 批量处理所有书签
+ * @param {Array} bookmarks - 书签数组
+ * @returns {Promise} 处理完成的Promise
+ */
 async function processAllBookmarks(bookmarks) {
     console.log('\n=== 开始处理所有书签 ===');
     console.log(`时间: ${new Date().toLocaleString()}`);
@@ -280,4 +315,5 @@ async function processAllBookmarks(bookmarks) {
     console.log(`失败数量: ${failCount}`);
 }
 
+// 启动脚本
 addBookmarkFooters();
