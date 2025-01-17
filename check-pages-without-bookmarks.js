@@ -8,19 +8,47 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
     var pagesWithoutBookmarks = [];
     var bookmarkPages = {};
     var originalPage = doc.pageNum;
+    var duplicatePages = {};
     
     try {
         // 记录所有书签对应的页码
-        console.println("正在收集书签页码...");
+        console.println("\n=== 书签页码统计 ===");
+        console.println("总页数：" + doc.numPages);
+        console.println("书签数：" + bookmarks.length);
+        console.println("\n正在收集书签页码...");
+        
         for (var i = 0; i < bookmarks.length; i++) {
             var bookmark = bookmarks[i];
             bookmark.execute();
-            bookmarkPages[doc.pageNum] = true;
-            console.println("书签 [" + (i + 1) + "/" + bookmarks.length + "]: " + bookmark.name + " -> 页码 " + (doc.pageNum + 1));
+            var pageNum = doc.pageNum;
+            
+            // 检查重复书签页
+            if (bookmarkPages[pageNum]) {
+                if (!duplicatePages[pageNum]) {
+                    duplicatePages[pageNum] = [];
+                }
+                duplicatePages[pageNum].push(bookmark.name);
+            }
+            
+            bookmarkPages[pageNum] = bookmark.name;
+            console.println("书签 [" + (i + 1) + "/" + bookmarks.length + "]: " + bookmark.name + " -> 页码 " + (pageNum + 1));
+        }
+        
+        // 检查重复书签页
+        var hasDuplicates = Object.keys(duplicatePages).length > 0;
+        if (hasDuplicates) {
+            console.println("\n=== 发现重复书签页 ===");
+            for (var page in duplicatePages) {
+                console.println("第 " + (parseInt(page) + 1) + " 页有多个书签：");
+                console.println("- " + bookmarkPages[page]);
+                duplicatePages[page].forEach(function(name) {
+                    console.println("- " + name);
+                });
+            }
         }
         
         // 检查每一页是否有书签
-        console.println("\n正在检查无书签页面...");
+        console.println("\n=== 无书签页面检查 ===");
         for (var pageNum = 0; pageNum < doc.numPages; pageNum++) {
             if (!bookmarkPages[pageNum]) {
                 pagesWithoutBookmarks.push(pageNum + 1);
@@ -28,27 +56,33 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
         }
         
         // 显示结果
+        console.println("\n=== 检查结果汇总 ===");
+        console.println("总页数：" + doc.numPages);
+        console.println("书签数：" + bookmarks.length);
+        console.println("无书签页面数：" + pagesWithoutBookmarks.length);
+        console.println("重复书签页数：" + Object.keys(duplicatePages).length);
+        
+        var resultMessage = "检查结果：\n\n" +
+                           "总页数：" + doc.numPages + "\n" +
+                           "书签数：" + bookmarks.length + "\n" +
+                           "无书签页面数：" + pagesWithoutBookmarks.length + "\n" +
+                           "重复书签页数：" + Object.keys(duplicatePages).length + "\n\n";
+        
         if (pagesWithoutBookmarks.length > 0) {
-            console.println("\n发现 " + pagesWithoutBookmarks.length + " 个无书签页面:");
-            console.println("页码: " + pagesWithoutBookmarks.join(", "));
-            
-            app.alert({
-                cMsg: "发现 " + pagesWithoutBookmarks.length + " 个无书签页面：\n\n" +
-                      "页码：" + pagesWithoutBookmarks.join(", ") + "\n\n" +
-                      "详细信息已输出到控制台",
-                cTitle: "无书签页面检查结果",
-                nIcon: 2,
-                nType: 0
-            });
-        } else {
-            console.println("\n未发现无书签页面");
-            app.alert({
-                cMsg: "文档中所有页面都有对应的书签！",
-                cTitle: "无书签页面检查结果",
-                nIcon: 3,
-                nType: 0
-            });
+            console.println("\n无书签页面：" + pagesWithoutBookmarks.join(", "));
+            resultMessage += "无书签页面：" + pagesWithoutBookmarks.join(", ") + "\n\n";
         }
+        
+        if (hasDuplicates) {
+            resultMessage += "发现重复书签页！请查看控制台获取详细信息\n\n";
+        }
+        
+        app.alert({
+            cMsg: resultMessage + "详细信息已输出到控制台",
+            cTitle: "书签检查结果",
+            nIcon: 2,
+            nType: 0
+        });
         
     } catch(e) {
         console.println("检查过程中发生错误: " + e);
