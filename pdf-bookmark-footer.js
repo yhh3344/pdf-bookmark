@@ -23,8 +23,12 @@ var CONFIG = {
 // 创建注释函数
 function createAnnotation(doc, page, text) {
     try {
+        if (page < 0 || page >= doc.numPages) {
+            throw new Error(`页码 ${page + 1} 超出范围 (总页数: ${doc.numPages})`);
+        }
+
         console.println("  正在创建页脚注释...");
-        console.println("  - 页码: " + page);
+        console.println(`  - 页码: ${page + 1}`);
         console.println("  - 文本: " + text);
         
         var annot = doc.addAnnot({
@@ -109,12 +113,23 @@ function showConfirmDialog() {
     var results = {success: 0, fail: 0, failedBookmarks: []};
     var errorLog = "";
 
+    // 创建一个数组来跟踪已处理的页码
+    var processedPages = new Array(gDoc.numPages).fill(false);
+    
+    console.println("\n=== 开始处理书签页面 ===");
     for (var i = 0; i < gBookmarks.length; i++) {
         var bookmark = gBookmarks[i];
         try {
-            console.println("\n处理书签 [" + (i + 1) + "/" + gBookmarks.length + "]: " + bookmark.name);
+            console.println(`\n处理书签 [${i + 1}/${gBookmarks.length}]:`);
+            console.println(`书签名称: ${bookmark.name}`);
+            
             bookmark.execute();
-            var annot = createAnnotation(gDoc, gDoc.pageNum, bookmark.name);
+            var currentPage = gDoc.pageNum;
+            processedPages[currentPage] = true;
+            
+            console.println(`页面编号: ${currentPage + 1}`);
+            
+            var annot = createAnnotation(gDoc, currentPage, bookmark.name);
             if (annot) {
                 results.success++;
                 console.println("✓ 成功添加页脚注释");
@@ -136,13 +151,26 @@ function showConfirmDialog() {
         }
     }
     
-    gDoc.pageNum = gOriginalPage;
+    // 列出没有书签的页面
+    var unprocesedPages = [];
+    for (var j = 0; j < processedPages.length; j++) {
+        if (!processedPages[j]) {
+            unprocesedPages.push(j + 1);
+        }
+    }
     
-    // 打印最终处理结果
     console.println("\n=== 处理完成 ===");
-    console.println("成功数量: " + results.success);
-    console.println("失败数量: " + results.fail);
+    console.println(`总页数: ${gDoc.numPages}`);
+    console.println(`处理成功: ${results.success}`);
+    console.println(`处理失败: ${results.fail}`);
     
+    if (unprocesedPages.length > 0) {
+        console.println("\n=== 未处理页面 ===");
+        console.println(`共 ${unprocesedPages.length} 页没有对应书签:`);
+        console.println(unprocesedPages.join(", "));
+    }
+    
+    // 修改最终提示对话框
     if (results.failedBookmarks.length > 0) {
         console.println("\n=== 失败详情 ===");
         console.println(errorLog);
@@ -160,9 +188,14 @@ function showConfirmDialog() {
             nType: 0
         });
     } else {
-        console.println("\n全部处理成功！");
         app.alert({
-            cMsg: "处理完成！\n所有 " + results.success + " 个书签都已成功处理！",
+            cMsg: `处理完成！\n\n` +
+                  `总页数: ${gDoc.numPages}\n` +
+                  `成功处理: ${results.success} 个书签\n` +
+                  `未处理页面: ${unprocesedPages.length} 页\n\n` +
+                  (unprocesedPages.length > 0 ? 
+                   `未处理的页码: ${unprocesedPages.join(", ")}` : 
+                   "所有页面都已处理！"),
             cTitle: "添加页脚注释",
             nIcon: 3,
             nType: 0
@@ -216,6 +249,35 @@ function addBookmarkFooters() {
         console.println("错误详情: " + e);
         app.alert("发生错误: " + e);
     }
+}
+
+async function processAllBookmarks(bookmarks) {
+    console.log('\n=== 开始处理所有书签 ===');
+    console.log(`时间: ${new Date().toLocaleString()}`);
+    console.log(`总书签数量: ${bookmarks.length}\n`);
+    
+    const startTime = Date.now();
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < bookmarks.length; i++) {
+        console.log(`\n--- 处理书签 [${i + 1}/${bookmarks.length}] ---`);
+        try {
+            await processBookmark(bookmarks[i]);
+            successCount++;
+        } catch (error) {
+            console.error(`处理失败: ${error.message}`);
+            failCount++;
+        }
+    }
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+    
+    console.log('\n=== 处理完成 ===');
+    console.log(`总耗时: ${duration}秒`);
+    console.log(`成功数量: ${successCount}`);
+    console.log(`失败数量: ${failCount}`);
 }
 
 addBookmarkFooters();
