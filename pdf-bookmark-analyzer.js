@@ -1,3 +1,16 @@
+/**
+ * PDF书签分析工具
+ * 用于分析PDF文档中的书签分布情况，包括：
+ * - 检测无书签页面
+ * - 统计重复书签页
+ * - 生成书签分布报告
+ * 
+ * @copyright Copyright (c) 2025 yhh
+ * @license MIT
+ * @version 1.0.0
+ * @tested Foxit PDF Editor 13.0.1.21693
+ */
+
 // 全局变量
 var gDoc;
 var gBookmarks;
@@ -7,11 +20,11 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
     console.println("\n=== 开始检查无书签页面 ===");
     var pagesWithoutBookmarks = [];
     var bookmarkPages = {};
+    var pagesWithBookmarks = {};  // 用于检查页面是否有书签
     var originalPage = doc.pageNum;
-    var duplicatePages = {};
     
     try {
-        // 记录所有书签对应的页码
+        // 修改数据结构，使每个页码可以存储多个书签
         console.println("\n=== 书签页码统计 ===");
         console.println("总页数：" + doc.numPages);
         console.println("书签数：" + bookmarks.length);
@@ -22,35 +35,43 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
             bookmark.execute();
             var pageNum = doc.pageNum;
             
-            // 检查重复书签页
-            if (bookmarkPages[pageNum]) {
-                if (!duplicatePages[pageNum]) {
-                    duplicatePages[pageNum] = [];
-                }
-                duplicatePages[pageNum].push(bookmark.name);
+            // 初始化数组（如果不存在）
+            if (!bookmarkPages[pageNum]) {
+                bookmarkPages[pageNum] = [];
             }
             
-            bookmarkPages[pageNum] = bookmark.name;
+            // 添加书签到对应页码
+            bookmarkPages[pageNum].push(bookmark.name);
+            pagesWithBookmarks[pageNum] = true;
+            
             console.println("书签 [" + (i + 1) + "/" + bookmarks.length + "]: " + bookmark.name + " -> 页码 " + (pageNum + 1));
         }
         
         // 检查重复书签页
-        var hasDuplicates = Object.keys(duplicatePages).length > 0;
+        var duplicatePages = {};
+        var hasDuplicates = false;
+        
+        for (var page in bookmarkPages) {
+            if (bookmarkPages[page].length > 1) {
+                hasDuplicates = true;
+                duplicatePages[page] = bookmarkPages[page];
+            }
+        }
+        
         if (hasDuplicates) {
             console.println("\n=== 发现重复书签页 ===");
             for (var page in duplicatePages) {
-                console.println("第 " + (parseInt(page) + 1) + " 页有多个书签：");
-                console.println("- " + bookmarkPages[page]);
+                console.println("第 " + (parseInt(page) + 1) + " 页有 " + duplicatePages[page].length + " 个书签：");
                 duplicatePages[page].forEach(function(name) {
                     console.println("- " + name);
                 });
             }
         }
         
-        // 检查每一页是否有书签
+        // 检查无书签页面
         console.println("\n=== 无书签页面检查 ===");
         for (var pageNum = 0; pageNum < doc.numPages; pageNum++) {
-            if (!bookmarkPages[pageNum]) {
+            if (!pagesWithBookmarks[pageNum]) {
                 pagesWithoutBookmarks.push(pageNum + 1);
             }
         }
@@ -74,7 +95,17 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
         }
         
         if (hasDuplicates) {
-            resultMessage += "发现重复书签页！请查看控制台获取详细信息\n\n";
+            var duplicatePagesMsg = "重复书签页：\n";
+            for (var page in duplicatePages) {
+                duplicatePagesMsg += "第 " + (parseInt(page) + 1) + " 页 (" + 
+                                   duplicatePages[page].length + " 个书签):\n";
+                duplicatePages[page].forEach(function(name) {
+                    duplicatePagesMsg += "- " + name + "\n";
+                });
+                duplicatePagesMsg += "\n";
+            }
+            console.println("\n" + duplicatePagesMsg);
+            resultMessage += duplicatePagesMsg;
         }
         
         app.alert({
