@@ -15,9 +15,9 @@
 var gDoc;
 var gBookmarks;
 
-// 检查无书签页面的函数
-function findPagesWithoutBookmarks(doc, bookmarks) {
-    console.println("\n=== 开始检查无书签页面 ===");
+// 修改函数名，使其更准确地反映功能
+function analyzeBookmarkDistribution(doc, bookmarks) {
+    console.println("\n=== 开始分析书签分布 ===");
     var pagesWithoutBookmarks = [];
     var bookmarkPages = {};
     var pagesWithBookmarks = {};  // 用于检查页面是否有书签
@@ -129,8 +129,8 @@ function findPagesWithoutBookmarks(doc, bookmarks) {
     }
 }
 
-// 主函数
-function checkPagesWithoutBookmarks() {
+// 主函数重命名
+function startBookmarkAnalysis() {
     console.println("=== 开始执行脚本 ===");
     console.println("时间: " + new Date().toLocaleString());
     
@@ -150,8 +150,8 @@ function checkPagesWithoutBookmarks() {
         }
         console.println("检测到书签数量: " + gBookmarks.length);
         
-        // 执行检查
-        findPagesWithoutBookmarks(gDoc, gBookmarks);
+        // 执行分析
+        analyzeBookmarkDistribution(gDoc, gBookmarks);
         
     } catch(e) {
         console.println("\n=== 发生错误 ===");
@@ -166,4 +166,4 @@ function checkPagesWithoutBookmarks() {
 }
 
 // 执行脚本
-checkPagesWithoutBookmarks(); 
+startBookmarkAnalysis(); 
